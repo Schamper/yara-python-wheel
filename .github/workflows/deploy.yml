@@ -1,0 +1,67 @@
+name: Build and upload to PyPI
+
+on:
+  push:
+    paths:
+      - 'VERSION'
+  workflow_dispatch:
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-12]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: all
+
+      - name: Set variables (Linux/macOS)
+        run: |
+          VERSION=$(cat VERSION)
+          echo "TAG=$VERSION" >> $GITHUB_ENV
+
+      - name: Checkout yara-python
+        uses: actions/checkout@v3
+        with:
+          repository: VirusTotal/yara-python
+          ref: ${{ env.TAG }}
+          path: yara-python
+          submodules: true
+
+      - name: Change package name
+        run: |
+          sed -i -E "s/name='yara-python'/name='yara-python-wheel'" yara-python/setup.py
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.0
+        with:
+          package-dir: yara-python
+        env:
+          CIBW_ARCHS_MACOS: x86_64 arm64
+          CIBW_ARCHS_LINUX: auto aarch64
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+  upload_pypi:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
