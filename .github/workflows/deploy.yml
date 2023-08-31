@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-12]
+        os: [ubuntu-22.04, macos-12, windows-2022]
 
     steps:
       - uses: actions/checkout@v3
@@ -24,9 +24,16 @@ jobs:
           platforms: all
 
       - name: Set variables (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
           VERSION=$(cat VERSION)
           echo "TAG=$VERSION" >> $GITHUB_ENV
+
+      - name: Set variables (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $env:GITHUB_ENV += "TAG=" + (Get-Content VERSION)
+        shell: pwsh
 
       - name: Checkout yara-python
         uses: actions/checkout@v3
@@ -47,7 +54,8 @@ jobs:
           package-dir: yara-python
         env:
           CIBW_ARCHS_MACOS: x86_64 arm64
-          CIBW_ARCHS_LINUX: auto aarch64
+          CIBW_ARCHS_LINUX: x86_64 i686 aarch64
+          CIBW_ARCHS_WINDOWS: AMD64 x86 ARM64
           CIBW_BEFORE_ALL_LINUX: yum install -y openssl-devel || apk add openssl-dev
           CIBW_SKIP: cp36-*
 
