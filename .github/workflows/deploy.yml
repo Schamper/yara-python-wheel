@@ -39,6 +39,7 @@ jobs:
       - name: Change package name
         run: |
           sed -i -E "s/name='yara-python'/name='yara-python-wheel'/" yara-python/setup.py
+          sed -i -E "s/https:\/\/github.com\/VirusTotal\/yara-python/https:\/\/github.com\/Schamper\/yara-python-wheel/" yara-python/setup.py
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.15.0
