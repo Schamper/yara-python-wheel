@@ -15,8 +15,10 @@ jobs:
 
       - name: Fetch release version
         run: |
-          curl -sL https://api.github.com/repos/VirusTotal/yara-python/releases/latest | \
-          jq -r ".tag_name" > VERSION
+          LATEST=$(curl -sL https://api.github.com/repos/VirusTotal/yara-python/releases/latest | jq -r ".tag_name")
+          if [[ $LATEST > $(cat VERSION) ]]; then
+            echo $LATEST > VERSION
+          fi
 
       - name: Update README.rst
         run: |
@@ -24,12 +26,17 @@ jobs:
 
       - name: Check for modified files
         id: git-check
-        run: echo ::set-output name=modified::$([ -z "`git status --porcelain`" ] && echo "false" || echo "true")
+        run: echo "modified=$(([ -z "`git status --porcelain`" ] || [ "`git ls-remote --heads origin update-$(cat VERSION)`" ] && echo "false") || echo "true")" >> $GITHUB_OUTPUT
 
       - name: Commit latest release version
         if: steps.git-check.outputs.modified == 'true'
         run: |
           git config --global user.name 'Schamper'
           git config --global user.email '1254028+Schamper@users.noreply.github.com'
+          git checkout -b update-`cat VERSION`
           git commit -am "Update to version `cat VERSION`"
-          git push
+          git push -u origin update-`cat VERSION`
+
+          gh pr create -B main -H update-`cat VERSION` --fill
+        env:
+          GH_TOKEN: ${{ secrets.REPO_SCOPED_TOKEN }}
