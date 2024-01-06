@@ -84,7 +84,6 @@ jobs:
           CIBW_ENVIRONMENT: ${{ matrix.env }}
           CIBW_SKIP: cp36-*
           CIBW_TEST_COMMAND: python {package}/tests.py
-          CIBW_TEST_SKIP: pp*-*linux*
 
       - uses: actions/upload-artifact@v3
         with:
