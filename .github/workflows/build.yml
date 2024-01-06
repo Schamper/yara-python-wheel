@@ -1,4 +1,4 @@
-name: Build and publish
+name: CI
 
 on:
   pull_request:
@@ -92,6 +92,7 @@ jobs:
 
   publish:
     if: ${{ github.ref_name == 'main' || github.ref_type == 'tag' }}
+    name: Publish to PyPI
     needs: [build]
     runs-on: ubuntu-latest
     environment: publish
