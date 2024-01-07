@@ -1,10 +1,15 @@
-name: Build and publish
+name: CI
 
 on:
+  pull_request:
   push:
     paths:
       - 'VERSION'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -20,7 +25,7 @@ jobs:
           - os: ubuntu-22.04
             arch: aarch64
           - os: macos-12
-            arch: universal2
+            arch: x86_64 universal2
           - os: windows-2022
             arch: x86
             before: vcpkg install openssl:x86-windows-static
@@ -84,7 +89,6 @@ jobs:
           CIBW_ENVIRONMENT: ${{ matrix.env }}
           CIBW_SKIP: cp36-*
           CIBW_TEST_COMMAND: python {package}/tests.py
-          CIBW_TEST_SKIP: pp*-*linux* *win*
 
       - uses: actions/upload-artifact@v3
         with:
@@ -92,6 +96,7 @@ jobs:
 
   publish:
     if: ${{ github.ref_name == 'main' || github.ref_type == 'tag' }}
+    name: Publish to PyPI
     needs: [build]
     runs-on: ubuntu-latest
     environment: publish
