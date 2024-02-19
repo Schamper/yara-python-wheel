@@ -1,6 +1,10 @@
 yara-python-wheel
 =================
 
+.. pull-quote::
+
+    This project is archived since `yara-python` now provides pre-compiled wheels!
+
 This is an alternative installation package for `yara-python <https://github.com/VirusTotal/yara-python>`_.
 It provides pre-compiled wheels for x86, x86_64 and ARM for Linux, macOS and Windows.
 
